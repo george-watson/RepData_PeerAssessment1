@@ -8,30 +8,32 @@ output:
 ### Loading and preprocessing the data  
 
 Unziping and reading the 'activity' data file.
-```{r dataload, cache = TRUE}
+
+```r
 activity <- read.csv(unz("activity.zip", "activity.csv"))
 ```
 
 Converting the variable 'date' to class Date.
-```{r dates}
-activity$date <- as.Date(activity$date, format = "%Y-%m-%d")
 
+```r
+activity$date <- as.Date(activity$date, format = "%Y-%m-%d")
 ```
 
 
 ### Mean total number of steps taken per day  
 
 Calculating the total number of steps taken each day (ignoring NAs).
-```{r message=FALSE}
+
+```r
 library(dplyr)
 byday <- activity %>% 
         group_by(date) %>%
         summarise(steps = sum(steps))
-
 ```
 
 Histogram of the total number of steps taken each day (ignoring NAs).
-```{r hist1}
+
+```r
 library(ggplot2)
 ggplot(data = subset(byday, !is.na(steps)), aes(steps)) + 
         geom_histogram(breaks = seq(0, 22500, 2500)) +
@@ -40,20 +42,24 @@ ggplot(data = subset(byday, !is.na(steps)), aes(steps)) +
         scale_color_manual(name = "", values = c(median = "red"))
 ```
 
+![](PA1_template_files/figure-html/hist1-1.png)<!-- -->
+
 Calculating the mean and median of the number of steps taken each day.
-```{r}
+
+```r
 mnsteps <- mean(byday$steps, na.rm = TRUE)
 medsteps <- median(byday$steps, na.rm = TRUE)
 ```
 
-Mean : `r format(mnsteps, scientific = FALSE)` steps per day  
-Median : `r medsteps` steps per day
+Mean : 10766.19 steps per day  
+Median : 10765 steps per day
 
 ### Average daily activity pattern  
 
 Making a time series plot of the 5-minute interval and the average number of steps taken, averaged across all days.
 
-```{r timeseries1}
+
+```r
 byint <- activity %>% 
         group_by(interval) %>%
         summarise(mean = mean(steps, na.rm = TRUE))
@@ -63,21 +69,30 @@ ggplot(byint, aes(interval, mean)) +
         labs(title = "Mean number of steps taken in 5-min intervals, averaged across all days", x = "intervals", y = "number of steps")
 ```
 
+![](PA1_template_files/figure-html/timeseries1-1.png)<!-- -->
+
 Finding which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps.
-```{r}
+
+```r
 intmax <- byint[which.max(byint$mean), 1]
 ```
-Interval : `r intmax`
+Interval : 835
 
 ### Imputing missing values
 
 Calculating the total number of missing values in the dataset.
-```{r}
+
+```r
 sum(is.na(activity))
 ```
 
+```
+## [1] 2304
+```
+
 Creating a new data set 'complete', equal to 'activity', but with the missing values filled-in with the mean for the corresponding 5-min interval.
-```{r imputing}
+
+```r
 complete <- activity
 for(i in 1:length(complete$steps)) {
         if(is.na(complete[i,1])) {
@@ -87,7 +102,8 @@ for(i in 1:length(complete$steps)) {
 ```
 
 Histogram of the total number of steps taken each day (with filled-in NAs).
-```{r hist2}
+
+```r
 complete_byday <- complete %>% 
         group_by(date) %>%
         summarise(steps = sum(steps))
@@ -99,24 +115,27 @@ ggplot(data = complete_byday, aes(steps)) +
         scale_color_manual(name = "", values = c(median = "red"))
 ```
 
+![](PA1_template_files/figure-html/hist2-1.png)<!-- -->
+
 Calculating the mean and median of the number of steps taken each day (with filled-in NAs).
-```{r}
+
+```r
 complete_mn <- mean(complete_byday$steps)
 complete_med <- median(complete_byday$steps)
 ```
 
-New mean : `r format(complete_mn, scientific = FALSE)` steps per day  
-Mean ignoring NAs : `r format(mnsteps, scientific = FALSE)` steps per day  
+New mean : 10766.19 steps per day  
+Mean ignoring NAs : 10766.19 steps per day  
 
-New median : `r format(complete_med, scientific = FALSE)` steps per day  
-Median ignoring NAs : `r format(medsteps, scientific = FALSE)` steps per day
+New median : 10766.19 steps per day  
+Median ignoring NAs : 10765 steps per day
 
 *The impact of imputing missing data appears to be negligible for the estimates of the total daily number of steps.*
 
 ### Comparison of activity patterns between weekdays and weekends
 
-```{r timeseries2}
 
+```r
 complete$status <- factor(ifelse(weekdays(complete$date) %in% c("Saturday", "Sunday"), "weekend", "weekday"))
 
 complete_byint <- complete %>% 
@@ -129,4 +148,6 @@ ggplot(complete_byint, aes(interval, mean)) +
         labs(title = "Average number of steps taken, in 5-min intervals,\n across weekdays or weekend days", y = "number of steps", x = "intervals") +
         theme(plot.title = element_text(hjust = 0.5))
 ```
+
+![](PA1_template_files/figure-html/timeseries2-1.png)<!-- -->
 
